@@ -366,8 +366,13 @@
   }
 
   function submit() {
-    if (!validate()) return;
+    alert("submit() fired. tg exists: " + !!tg + " | sendData exists: " + !!(tg && tg.sendData));
+    if (!validate()) {
+      alert("Validation failed — amount is empty or 0");
+      return;
+    }
     const payload = buildPayload();
+    alert("Payload built:\n" + JSON.stringify(payload));
 
     if (tg && tg.sendData) {
       submitBtn.classList.add("submitting");
