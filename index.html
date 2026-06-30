@@ -178,6 +178,66 @@
     display: none;
     margin-top: 8px;
   }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--secondary-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .toggle-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .toggle {
+    position: relative;
+    width: 51px;
+    height: 31px;
+    flex-shrink: 0;
+  }
+
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    inset: 0;
+    background: rgba(120,120,128,0.32);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+  }
+
+  .toggle-thumb::after {
+    content: "";
+    position: absolute;
+    width: 27px;
+    height: 27px;
+    left: 2px;
+    top: 2px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
+  }
+
+  .toggle input:checked + .toggle-thumb {
+    background: #34c759;
+  }
+
+  .toggle input:checked + .toggle-thumb::after {
+    transform: translateX(20px);
+  }
 </style>
 </head>
 <body>
@@ -212,6 +272,14 @@
     <label>Labels</label>
     <div class="chips" id="labelChips"></div>
     <input class="input new-label-input" id="newLabelInput" type="text" placeholder="Type a new label, press enter">
+  </div>
+
+  <div class="toggle-row">
+    <span class="toggle-label">Split with Owen</span>
+    <label class="toggle">
+      <input type="checkbox" id="splitWithOwen">
+      <span class="toggle-thumb"></span>
+    </label>
   </div>
 
   <div class="field">
@@ -320,7 +388,8 @@
       amount: parseFloat(amountInput.value),
       payment_method: paymentSelectEl.value,
       labels: Array.from(selectedLabels),
-      notes: notesInput.value.trim()
+      notes: notesInput.value.trim(),
+      split_with_owen: document.getElementById("splitWithOwen").checked
     };
   }
 
