@@ -131,22 +131,6 @@
     border-style: dashed;
   }
 
-  .quick-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .quick-row button {
-    flex: 1;
-    padding: 8px;
-    border-radius: 10px;
-    border: none;
-    background: var(--secondary-bg);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
   .footer {
     position: fixed;
     bottom: 0;
@@ -217,15 +201,11 @@
   <div class="field">
     <label for="date">Date</label>
     <input class="input" id="date" type="date">
-    <div class="quick-row">
-      <button type="button" data-offset="0">Today</button>
-      <button type="button" data-offset="-1">Yesterday</button>
-    </div>
   </div>
 
   <div class="field">
-    <label>Payment method</label>
-    <div class="chips" id="paymentChips"></div>
+    <label for="paymentMethod">Payment method</label>
+    <select class="input" id="paymentMethod"></select>
   </div>
 
   <div class="field">
@@ -267,27 +247,16 @@
   }
   setDateOffset(0);
 
-  document.querySelectorAll(".quick-row button").forEach(btn => {
-    btn.addEventListener("click", () => setDateOffset(parseInt(btn.dataset.offset, 10)));
+  // Payment method dropdown
+  const PAYMENT_DEFAULT = "Credit Card";
+  const paymentSelectEl = document.getElementById("paymentMethod");
+  PAYMENT_METHODS.forEach(method => {
+    const opt = document.createElement("option");
+    opt.value = method;
+    opt.textContent = method;
+    paymentSelectEl.appendChild(opt);
   });
-
-  // Payment method chips (single select)
-  let selectedPayment = PAYMENT_METHODS[0];
-  const paymentChipsEl = document.getElementById("paymentChips");
-  function renderPaymentChips() {
-    paymentChipsEl.innerHTML = "";
-    PAYMENT_METHODS.forEach(method => {
-      const chip = document.createElement("div");
-      chip.className = "chip" + (method === selectedPayment ? " selected" : "");
-      chip.textContent = method;
-      chip.addEventListener("click", () => {
-        selectedPayment = method;
-        renderPaymentChips();
-      });
-      paymentChipsEl.appendChild(chip);
-    });
-  }
-  renderPaymentChips();
+  paymentSelectEl.value = PAYMENT_METHODS.includes(PAYMENT_DEFAULT) ? PAYMENT_DEFAULT : PAYMENT_METHODS[0];
 
   // Labels chips (multi select + add new)
   let labels = [...DEFAULT_LABELS];
@@ -349,7 +318,7 @@
       date: dateInput.value,
       description: descriptionInput.value.trim(),
       amount: parseFloat(amountInput.value),
-      payment_method: selectedPayment,
+      payment_method: paymentSelectEl.value,
       labels: Array.from(selectedLabels),
       notes: notesInput.value.trim()
     };
@@ -366,13 +335,8 @@
   }
 
   function submit() {
-    alert("submit() fired. tg exists: " + !!tg + " | sendData exists: " + !!(tg && tg.sendData));
-    if (!validate()) {
-      alert("Validation failed — amount is empty or 0");
-      return;
-    }
+    if (!validate()) return;
     const payload = buildPayload();
-    alert("Payload built:\n" + JSON.stringify(payload));
 
     if (tg && tg.sendData) {
       submitBtn.classList.add("submitting");
