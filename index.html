@@ -275,7 +275,7 @@
   </div>
 
   <div class="toggle-row">
-    <span class="toggle-label">Split with Owen</span>
+    <span class="toggle-label">Split</span>
     <label class="toggle">
       <input type="checkbox" id="splitWithOwen">
       <span class="toggle-thumb"></span>
@@ -285,6 +285,11 @@
   <div class="field">
     <label for="notes">Notes <span style="text-transform:none; font-weight:400;">(optional)</span></label>
     <textarea class="input" id="notes" rows="3" placeholder="Any extra detail you want to remember"></textarea>
+  </div>
+
+  <div class="field">
+    <label>Paid by</label>
+    <div class="chips" id="paidByChips"></div>
   </div>
 
   <div class="footer">
@@ -302,9 +307,33 @@
   const PAYMENT_METHODS = ["Cash", "GCash", "Credit Card", "Debit Card", "Bank Transfer"];
   const DEFAULT_LABELS = ["Food", "Transport", "Groceries", "Bills", "Shopping", "Health", "Entertainment", "Other"];
   const CURRENCY = "₱";
+  const PAID_BY_OPTIONS = ["Lhen", "Owen"];
+  const PAID_BY_DEFAULT = "Lhen";
   // --------------------------------
 
   document.getElementById("currencyLabel").textContent = CURRENCY;
+
+  // Paid by chips (multi select, defaults to Lhen)
+  let selectedPaidBy = new Set([PAID_BY_DEFAULT]);
+  const paidByChipsEl = document.getElementById("paidByChips");
+  function renderPaidByChips() {
+    paidByChipsEl.innerHTML = "";
+    PAID_BY_OPTIONS.forEach(name => {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (selectedPaidBy.has(name) ? " selected" : "");
+      chip.textContent = name;
+      chip.addEventListener("click", () => {
+        if (selectedPaidBy.has(name)) {
+          selectedPaidBy.delete(name);
+        } else {
+          selectedPaidBy.add(name);
+        }
+        renderPaidByChips();
+      });
+      paidByChipsEl.appendChild(chip);
+    });
+  }
+  renderPaidByChips();
 
   // Date default = today, local time
   const dateInput = document.getElementById("date");
@@ -391,8 +420,9 @@
       amount: parseFloat(amountInput.value),
       payment_method: paymentSelectEl.value,
       labels: Array.from(selectedLabels),
+      split: document.getElementById("splitWithOwen").checked,
       notes: notesInput.value.trim(),
-      split_with_owen: document.getElementById("splitWithOwen").checked
+      paid_by: Array.from(selectedPaidBy)
     };
   }
 
