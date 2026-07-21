@@ -383,7 +383,13 @@
   </div>
 
   <div class="field">
-    <label>Payment method notes <span style="text-transform:none; font-weight:400; font-size:11px;">(optional)</span></label>
+    <label>Payment method tag <span style="text-transform:none; font-weight:400; font-size:11px;">(optional)</span></label>
+    <div class="chips" id="paymentTagChips"></div>
+    <input class="input new-label-input" id="newPaymentTagInput" type="text" placeholder="Type a new tag, press enter">
+  </div>
+
+  <div class="field">
+    <label>Payment method note <span style="text-transform:none; font-weight:400; font-size:11px;">(optional)</span></label>
     <textarea class="input" id="paymentNotes" rows="2" placeholder="e.g. last 4 digits, account name..."></textarea>
   </div>
 
@@ -414,6 +420,7 @@
   const PAYMENT_METHODS   = ["Credit Card", "Cash", "Bank Transfer"];
   const PAYMENT_DEFAULT   = "Credit Card";
   const DEFAULT_LABELS    = ["Food", "Household", "Transport", "Utilities", "Groceries", "Shopping", "Health", "Entertainment", "Other"];
+  const PAYMENT_TAGS      = ["RCBC Plat", "RCBC Gold", "BDO CC", "BPI CC", "Gcash", "Maya", "Others"];
   const PAID_BY_OPTIONS   = ["Lhen", "Owen"];
   const PAID_BY_DEFAULT   = "Lhen";
   const RECORDED_BY_DEFAULT = "Lhen";
@@ -482,6 +489,46 @@
     }
   });
 
+  // Payment method tag chips (single-select, optional)
+  let paymentTags = [...PAYMENT_TAGS];
+  let selectedPaymentTag = null;
+  const paymentTagChipsEl  = document.getElementById("paymentTagChips");
+  const newPaymentTagInput = document.getElementById("newPaymentTagInput");
+
+  function renderPaymentTagChips() {
+    paymentTagChipsEl.innerHTML = "";
+    paymentTags.forEach(tag => {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (selectedPaymentTag === tag ? " selected" : "");
+      chip.textContent = tag;
+      chip.addEventListener("click", () => {
+        selectedPaymentTag = selectedPaymentTag === tag ? null : tag;
+        renderPaymentTagChips();
+      });
+      paymentTagChipsEl.appendChild(chip);
+    });
+    const addChip = document.createElement("div");
+    addChip.className = "chip add-new";
+    addChip.textContent = "+ Add";
+    addChip.addEventListener("click", () => {
+      newPaymentTagInput.style.display = "block";
+      newPaymentTagInput.focus();
+    });
+    paymentTagChipsEl.appendChild(addChip);
+  }
+  renderPaymentTagChips();
+
+  newPaymentTagInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      const val = newPaymentTagInput.value.trim();
+      if (val && !paymentTags.includes(val)) paymentTags.push(val);
+      if (val) selectedPaymentTag = val;
+      newPaymentTagInput.value = "";
+      newPaymentTagInput.style.display = "none";
+      renderPaymentTagChips();
+    }
+  });
+
   // Paid by chips
   let selectedPaidBy = new Set([PAID_BY_DEFAULT]);
   const paidByChipsEl = document.getElementById("paidByChips");
@@ -539,6 +586,12 @@
   const amountError  = document.getElementById("amountError");
   const submitBtn    = document.getElementById("submitBtn");
 
+  function buildPaymentNotes() {
+    const note = document.getElementById("paymentNotes").value.trim();
+    if (selectedPaymentTag && note) return `${selectedPaymentTag}: ${note}`;
+    return selectedPaymentTag || note;
+  }
+
   function buildPayload() {
     const payload = {
       date:           dateInput.value,
@@ -550,7 +603,7 @@
       paid_by:        Array.from(selectedPaidBy).join(", "),
       notes:          document.getElementById("notes").value.trim(),
       updated_by:     document.getElementById("recordedBy").value,
-      payment_notes:  document.getElementById("paymentNotes").value.trim()
+      payment_notes:  buildPaymentNotes()
     };
 
     if (splitToggle.checked) {
@@ -621,6 +674,8 @@
     document.getElementById("description").value = "";
     document.getElementById("notes").value = "";
     document.getElementById("paymentNotes").value = "";
+    selectedPaymentTag = null;
+    renderPaymentTagChips();
     splitToggle.checked = false;
     PAID_BY_OPTIONS.forEach(name => { splitAmountInputs[name].value = ""; });
     updateSplitAmountVisibility();
