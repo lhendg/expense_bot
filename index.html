@@ -139,6 +139,7 @@
   }
   .split-amount-row input:focus { outline: none; }
   .split-amount-row input::placeholder { color: rgba(255,255,255,0.2); }
+  .split-amount-row input:disabled { color: var(--hint); }
 
   .error-text {
     color: var(--danger);
@@ -368,7 +369,13 @@
   </div>
 
   <div class="field" id="splitAmountField" style="display:none;">
-    <label>Split amount <span style="text-transform:none; font-weight:400; font-size:11px;">(optional)</span></label>
+    <label>Split type</label>
+    <select class="input" id="splitType">
+      <option value="50/50">50/50</option>
+      <option value="Adjusted">Adjusted</option>
+      <option value="Exact Amount">Exact Amount</option>
+    </select>
+    <label style="margin-top:16px;">Split amount <span style="text-transform:none; font-weight:400; font-size:11px;">(optional)</span></label>
     <div id="splitAmountChips"></div>
   </div>
 
@@ -575,10 +582,26 @@
     splitAmountInputs[name] = input;
   });
 
+  const splitTypeSelect = document.getElementById("splitType");
+
+  function updateSplitAmounts() {
+    const isHalf = splitTypeSelect.value === "50/50";
+    const amt = parseFloat(document.getElementById("amount").value) || 0;
+    const half = amt ? (amt / 2).toFixed(2) : "";
+    PAID_BY_OPTIONS.forEach(name => {
+      const input = splitAmountInputs[name];
+      input.disabled = isHalf;
+      if (isHalf) input.value = half;
+    });
+  }
+
   function updateSplitAmountVisibility() {
     splitAmountField.style.display = splitToggle.checked ? "block" : "none";
+    if (splitToggle.checked) updateSplitAmounts();
   }
   splitToggle.addEventListener("change", updateSplitAmountVisibility);
+  splitTypeSelect.addEventListener("change", updateSplitAmounts);
+  document.getElementById("amount").addEventListener("input", updateSplitAmounts);
   updateSplitAmountVisibility();
 
   // Submit
@@ -592,6 +615,12 @@
     return selectedPaymentTag || note;
   }
 
+  function buildNotes() {
+    const note = document.getElementById("notes").value.trim();
+    if (!splitToggle.checked) return note;
+    return note ? `${splitTypeSelect.value} | ${note}` : splitTypeSelect.value;
+  }
+
   function buildPayload() {
     const payload = {
       date:           dateInput.value,
@@ -601,12 +630,13 @@
       labels:         Array.from(selectedLabels).join(", "),
       split:          splitToggle.checked,
       paid_by:        Array.from(selectedPaidBy).join(", "),
-      notes:          document.getElementById("notes").value.trim(),
+      notes:          buildNotes(),
       updated_by:     document.getElementById("recordedBy").value,
       payment_notes:  buildPaymentNotes()
     };
 
     if (splitToggle.checked) {
+      payload.split_type = splitTypeSelect.value;
       PAID_BY_OPTIONS.forEach(name => {
         const raw = splitAmountInputs[name].value;
         payload[`split_amount_${name.toLowerCase()}`] = raw ? parseFloat(raw) : "";
@@ -677,7 +707,8 @@
     selectedPaymentTag = null;
     renderPaymentTagChips();
     splitToggle.checked = false;
-    PAID_BY_OPTIONS.forEach(name => { splitAmountInputs[name].value = ""; });
+    splitTypeSelect.value = "50/50";
+    PAID_BY_OPTIONS.forEach(name => { splitAmountInputs[name].value = ""; splitAmountInputs[name].disabled = false; });
     updateSplitAmountVisibility();
     setToday();
     paymentSelect.value = PAYMENT_DEFAULT;
